@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+	<meta charset="utf-8">
+	<title>English</title>
+	<meta name="description" content="">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<meta property="og:image" content="path/to/image.jpg">
+	<link rel="icon" href="img/favicon/favicon.ico">
+	<link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon-180x180.png">
+
+</head>
+
+<body style="background-image: url(img/bg.png); 
+  background-size: cover; background-repeat: repeat-y; margin-top: 2%">
+
+	<canvas id="canvas"
+	style="border: 3px solid grey; display: block; margin: auto; background-color: white;">
+	</canvas>
+
+	<script>
+		let canvas  = document.getElementById("canvas");
+		let ctx = canvas.getContext("2d");
+		let canvasHeight = document.documentElement.clientHeight * 0.9;
+		if (document.documentElement.clientHeight > document.documentElement.clientWidth) {
+			canvasHeight = document.documentElement.clientWidth * 0.9;
+		}
+
+		canvas.setAttribute('width', canvasHeight);
+		canvas.setAttribute('height', canvasHeight);
+
+		let font = canvasHeight / 25 + "px Arial";
+		ctx.font = font;
+		ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+
+		let vocabulary = [];
+		let localStorageVocabulary = addLocalStorage();
+		allWords();
+
+		let wordsForContainers = [];
+		createWordsForContainers(10);
+
+		let containers = [];
+		createContainers();
+
+		let menu = [];
+		createMenu();
+
+		drawContainers();
+		drawMenu();
+
+		init();
+
+		main();
+
+		function createMenu() {
+			menu = [
+				list = {
+					x : canvasHeight / 1.15,
+					y : 0
+				},
+				plusWord = {
+					x : canvasHeight / 1.15,
+					y : canvasHeight / 16
+				},
+				minusWord = {
+					x : canvasHeight / 1.15,
+					y : canvasHeight / 8
+				},
+				clear = {
+					x : canvasHeight / 1.15,
+					y : canvasHeight / 5.35
+				}
+			]
+		}
+
+		function createContainers() {
+			for(let i = 0; i < 20; ++i) {
+			 	containers[i] = {
+			 		x    		: i < 10 ? canvasHeight / 15 : canvasHeight / 2.1,
+			 		y    		: i % 10 * canvasHeight / 10 + canvasHeight / 64,
+			 		word		: i < 10 ? wordsForContainers[i].engWord : wordsForContainers[i].rusWord,
+			 		id      : wordsForContainers[i].id,
+			 		active  : false,
+			 		visible	: true,
+			 	}
+			 	containers[i].startX = containers[i].x;
+			 	containers[i].startY = containers[i].y;
+		 	}
+		}
+
+		function createWordsForContainers(n) { //and delete from Vocabulary
+			let arrVocab = randomArray(vocabulary.length, n);
+			let arr = randomArray(n, n);
+			for (let i = 0; i < n; ++i) {
+				wordsForContainers[i] = vocabulary[arrVocab[i]];
+				wordsForContainers[n + arr[i]] = vocabulary[arrVocab[i]];
+			}
+			bubbleSort(arrVocab);
+			for (let i = n - 1; i >= 0; --i) {
+				vocabulary.splice(arrVocab[i], 1);
+			}
+		}
+
+		function drawContainer(arr, i, color) {
+			if (color === undefined) {
+				color = "LightGrey";
+			}
+			ctx.fillStyle = "black";
+			ctx.fillRect(arr[i].x, arr[i].y, canvasHeight / 3, canvasHeight / 16);
+			ctx.fillStyle = "white";
+			if (arr[i].active) {
+				ctx.fillStyle = color;
+			}
+			ctx.fillRect(arr[i].x + 1, arr[i].y + 1, canvasHeight / 3 -2, canvasHeight / 16 - 2);
+			ctx.fillStyle = "black";
+			ctx.fillText(arr[i].word, arr[i].x + canvasHeight / 6, arr[i].y + canvasHeight / 32);
+		}
+
+		function drawMenu() {
+			ctx.fillStyle = "black";
+			ctx.fillRect(menu[0].x, menu[0].y, canvasHeight / 7.6, canvasHeight / 16);
+			ctx.fillRect(menu[1].x, menu[1].y, canvasHeight / 7.6, canvasHeight / 16);
+			ctx.fillRect(menu[2].x, menu[2].y, canvasHeight / 7.6, canvasHeight / 16);
+			ctx.fillRect(menu[3].x, menu[3].y, canvasHeight / 7.6, canvasHeight / 16 + 1);
+			ctx.fillStyle = "white";
+			ctx.fillRect(menu[0].x + 1, menu[0].y + 1, canvasHeight / 7.7 - 2, canvasHeight / 16 - 2);
+			ctx.fillRect(menu[1].x + 1, menu[1].y + 1, canvasHeight / 7.7 - 2, canvasHeight / 16 - 2);
+			ctx.fillRect(menu[2].x + 1, menu[2].y + 1, canvasHeight / 7.7 - 2, canvasHeight / 16 - 2);
+			ctx.fillRect(menu[3].x + 1, menu[3].y + 1, canvasHeight / 7.7 - 2, canvasHeight / 16 - 2);
+			ctx.fillStyle = "black";
+			ctx.fillText("list", canvasHeight / 1.07, canvasHeight / 32, canvasHeight / 3, canvasHeight / 32);
+			ctx.fillText("+word", canvasHeight / 1.07, canvasHeight / 10.5, canvasHeight / 3, canvasHeight / 32);
+			ctx.fillText(" -word", canvasHeight / 1.07, canvasHeight / 6.5, canvasHeight / 3, canvasHeight / 32);
+			ctx.fillText("clear", canvasHeight / 1.07, canvasHeight / 4.6, canvasHeight / 3, canvasHeight / 32);
+		}
+
+		function drawContainers() {
+			for (let i = 0; i < 20; ++i) {
+				if (containers[i].visible) {
+					drawContainer(containers, i);
+				}
+			}
+			for (let i = 0; i < 20; ++i) {
+				if (containers[i].visible && containers[i].active) {
+					drawContainer(containers, i);
+				}
+			}
+		}
+
+		function clearAndDraw() {
+			ctx.clearRect(0, 0, canvasHeight, canvasHeight);
+			drawContainers();
+			drawMenu()
+		}
+
+
+		function main() {
+
+			let mouseDown = false;
+			let countVisible = containers.length;
+			let activeArr = [];
+
+			canvas.onmousedown = function() {
+				mouseDown = true;
+				for (let i = 0; i < containers.length; ++i) {
+					if(isCursorIn(containers[i])) {
+						containers[i].active = true;
+						activeArr[0] = containers[i];
+						canvas.onmousemove = function(event) {
+							if (mouseDown && containers[i].active) {
+								clearAndDraw();
+								containers[i].x = event.offsetX - canvasHeight / 6;
+								containers[i].y = event.offsetY - canvasHeight / 32;
+							}
+						}
+					}
+				}
+				for (let i = 0; i < menu.length; i++) {
+					if (isCursorIn(menu[i])) {
+						switch (i) {
+							case (0) :
+								let list = JSON.parse(localStorage["vocabulary"]);
+								let showList = "";
+								for (let i in list) {
+									showList = showList + list[i].engWord + " = " + list[i].rusWord;
+									if (i != list.length - 1) {
+										showList = showList + " | ";
+									}
+								}
+								alert(showList);
+							break;
+							case (1) :
+								let engWord = prompt("Enter english word: ");
+								if (engWord === null) {return;}
+								let rusWord = prompt("Enter russian word: ");
+								if (engWord !== null && rusWord !== null) {
+									addLocalStorage(engWord, rusWord);
+								}
+							break;
+							case (2) :
+								let remove = prompt("Enter english or russian word for delete: ")
+								if (remove !== null && localStorage["vocabulary"] !== undefined) {
+									let list = JSON.parse(localStorage["vocabulary"]);
+									for (let i in list) {
+										if (remove === list[i].engWord || remove === list[i].rusWord) {
+											list.splice(i, 1);
+											if (list.length !== 0) {
+												localStorage["vocabulary"] = JSON.stringify(list);
+											}
+											else {
+												delete localStorage["vocabulary"];
+											}
+											alert("successfully deleted!");
+										}
+									}
+								}
+							break;
+							case (3) :
+								let answer = confirm("Delete all added words?");
+								if (answer) {
+									delete localStorage["vocabulary"];
+								}
+							break;
+						}
+					}
+				}
+				clearAndDraw();
+			}
+
+			canvas.onmouseup = function() {
+				mouseDown = false;
+				for (let i = 0; i < containers.length; ++i) {
+					if(isCursorIn(containers[i])) {
+						containers[i].active = true;
+						if (containers[i] !== activeArr[0]) {
+							activeArr[activeArr.length] = containers[i];
+						}
+					}
+				}
+				if (activeArr.length === 2) {
+					if (activeArr[0].id === activeArr[1].id) {
+						drawContainer(activeArr, 0, "green");
+						drawContainer(activeArr, 1, "green");
+						clearAndDraw();
+						activeArr[0].visible = false;
+						activeArr[1].visible = false;
+						toStartPosition(activeArr, 2);
+						countVisible = countVisible - 2;
+						clearAndDraw();
+					}
+					else {
+						toStartPosition(activeArr, 2);
+						clearAndDraw();
+					}
+				}
+				else if (activeArr.length === 1) {
+					toStartPosition(activeArr, 1);
+					clearAndDraw();
+				}
+
+				for (let i = 0; i < containers.length; ++i) {
+					containers[i].active = false;
+					clearAndDraw();
+				}
+				activeArr.length = 0;
+
+				if (countVisible <= 10 && wordsForContainers.length > 0) {
+					wordsForContainers.length = 0;
+					createWordsForContainers(5);
+					let arrLength = lengthArrayElements(wordsForContainers) / 2;
+					let counter = 0, count = 0;
+					for (let i = 0; i < 20; ++i) {
+						while (wordsForContainers[counter] === undefined 
+									 && counter < wordsForContainers.length) {
+							counter = ++counter;
+						}
+						if (containers[i].visible === false && (arrLength > count || i >= 10) && wordsForContainers[counter] !== undefined) {
+							containers[i].word = i < 10 ? wordsForContainers[counter].engWord : wordsForContainers[counter].rusWord;
+			 				containers[i].id = wordsForContainers[counter].id;
+			 		 		containers[i].visible = true;
+			 		 		counter = ++counter;
+			 		 		count = ++count;
+						}
+					}
+					clearAndDraw();
+					countVisible = 20;
+				}
+			}
+		}
+
+		function toStartPosition(arr, n) {
+			for (let i = 0; i < n; ++i) {
+				arr[i].x = arr[i].startX;
+				arr[i].y = arr[i].startY;
+			}
+		}
+
+		function lengthArrayElements(arr) {
+			let result = 0
+			for (let i = 0; i < arr.length; ++i) {
+				if (arr[i] !== undefined) {
+					result = ++result;
+				}
+			}
+			return result;
+		}
+
+		function isCursorIn(obj) {
+			let x = event.offsetX;
+			let y = event.offsetY;
+			return x > obj.x && x < +obj.x + canvasHeight / 3 && 
+						 y > obj.y && y < +obj.y + canvasHeight / 16;
+		}
+
+		function bubbleSort(arr) {
+			let cont;
+			do {
+				cont = undefined;
+				for (let i = 1; i < arr.length; ++i) {
+					if (arr[i] < arr[i - 1]) {
+						cont = arr[i];
+						arr[i] = arr[i - 1];
+						arr[i - 1] = cont;
+					}
+				}
+			}
+			while (cont !== undefined);
+		}
+
+
+		function randomArray(maxNumber, arrayLength) {
+			if (arrayLength < 1 || maxNumber < 1) {
+				return false;
+			}
+			if (arrayLength > maxNumber) {
+				maxNumber = arrayLength;
+			}
+			let result = [];
+			while (result.length < arrayLength) {
+				let rand = Math.floor(Math.random() * maxNumber);
+				if (result.indexOf(rand) > -1) continue;
+				result[result.length] = rand;
+			}
+			return result;
+		}
+
+		function touchHandler(event) {
+    	let touch = event.changedTouches[0];
+
+    	let simulatedEvent = document.createEvent("MouseEvent");
+        simulatedEvent.initMouseEvent({
+        touchstart: "mousedown",
+        touchmove: "mousemove",
+        touchend: "mouseup"
+    	}[event.type], true, true, window, 1,
+        touch.screenX, touch.screenY,
+        touch.clientX, touch.clientY, false,
+        false, false, false, 0, null);
+
+    	touch.target.dispatchEvent(simulatedEvent);
+    	event.preventDefault();
+		}
+
+		function init() {
+   		document.addEventListener("touchstart", touchHandler, true);
+   		document.addEventListener("touchmove", touchHandler, true);
+  	  document.addEventListener("touchend", touchHandler, true);
+  	  document.addEventListener("touchcancel", touchHandler, true);
+		}
+
+		function addLocalStorage(eng, rus) {
+			let localStorageVocabulary = [];
+			if (localStorage["vocabulary"] !== undefined) {
+				localStorageVocabulary = JSON.parse(localStorage["vocabulary"]);
+			}
+			if (eng !== undefined && rus !== undefined) {
+				localStorageVocabulary[localStorageVocabulary.length] = {
+					engWord : eng,
+					rusWord : rus
+				}
+			}
+			if (localStorageVocabulary.length !== 0) {
+				localStorage["vocabulary"] = JSON.stringify(localStorageVocabulary);
+				return localStorageVocabulary;
+			}
+		}
+
+		function addWord(eng, rus) {
+			vocabulary[vocabulary.length] = {
+				engWord : eng,
+				rusWord : rus,
+				id 			: vocabulary.length
+			}
+		}
+
+		function allWords() {
+			addWord("roof", "крыша");	addWord("fate", "судьба");	addWord("arcane", "тайный");
+			addWord("hug", "объятие");	addWord("durable", "прочный");	addWord("berry", "ягода");
+			addWord("busted", "попался");	addWord("suit", "костюм");	addWord("bucket", "ведро");
+			addWord("prey", "добыча");	addWord("vagabond", "бродяга");	addWord("steel", "сталь");
+			addWord("swear", "клятва");	addWord("journey", "путешествие");	addWord("wrap", "обёртка");
+			addWord("clap", "хлопок");	addWord("to supply", "поставлять"); addWord("garden", "сад");
+			addWord("remove", "удаление"); addWord("addiction", "зависимость");	addWord("amateur", "любитель");
+			addWord("anger", "злость");	addWord("approve", "одобрние");	addWord("arrogant", "высокомерный");
+			addWord("arrangement", "договоренность"); addWord("boast", "хвастовство");	addWord("celebrity", "знаменитость");
+			addWord("confidence", "уверенность");	addWord("contribution", "вклад");
+			addWord("convenient", "удобный");	addWord("crawl", "ползание");	addWord("dedication", "верность");
+			addWord("depth", "глубина");	addWord("descend", "спускающийся");	addWord("distribute", "распростанение");
+			addWord("evidence", "доказательство");	addWord("famine", "голод");	addWord("flood", "потоп");
+			addWord("generosity", "щедрость");	addWord("gluttony", "обжорство");	addWord("hiccup", "икота");
+			addWord("humiliation", "унижение");	addWord("investigation", "расследование");	addWord("maintaining", "обслуживание");
+			addWord("mirror", "зеркало");	addWord("naughty", "непослушный");	addWord("patience", "терпение");
+			addWord("persuasion", "убедительность");	addWord("petrol", "бензин");	addWord("prescription", "рекомендация");
+			addWord("promotion", "продвижение");	addWord("quarrel", "ссора");	addWord("suspect", "подозревать");
+
+			if (localStorageVocabulary !== undefined) {
+				for (let i = 0; i < localStorageVocabulary.length; ++i) {
+					addWord(localStorageVocabulary[i].engWord, localStorageVocabulary[i].rusWord);
+				}
+			}
+		}		
+
+	</script>
+</body>
+</html>
